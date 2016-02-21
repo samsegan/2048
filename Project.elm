@@ -251,38 +251,6 @@ genSquare val (x,y) =
         [square (squareSize - 2) |> filled white |> move (x,y),
         (text (bold (Text.color white (Text.height 20 (fromString (toString val)))))) |> move(x,y)]
 
---genSquare for the candidate game
-genPic : Int -> (Float, Float) -> List Form
-genPic val (x,y) = 
-    if val == 0 || val > 16 then []
-    else [toForm (image (squareSize - 10) (squareSize - 10) ("donald" ++ (toString val) ++ ".jpg")) |> move (x,y)]
-
---genSquare : Int -> (Float, Float) -> List Form
---genSquare val (x,y) =
---    let tick = round (logBase 2 (toFloat val)) in
---    if val == 0 then []
---    else if tick >= 1 && tick <= 4 then [square (squareSize) |> filled black |> move (x,y),
---        square (squareSize - 2) |> filled (rgb 255 (255-(tick*50)) 100) |> move (x,y)]
---        ++ genPic tick (x,y) ++
---        [(text (bold (Text.height 20 (Text.color white ((fromString (toString val))))))) |> move(x,y - (squareSize/2 - 20))]
---    else if tick <= 8 then [square (squareSize) |> filled black |> move (x,y),
---        square (squareSize - 2) |> filled (rgb ((tick - 4)*50) 100 100) |> move (x,y)]
---        ++ genPic tick (x,y) ++
---        [(text (bold (Text.height 20 (Text.color white ((fromString (toString val))))))) |> move(x,y - (squareSize/2 - 20))]
---    else if tick <= 12 then
---        [square (squareSize) |> filled black |> move (x,y),
---        square (squareSize - 2) |> filled (rgb 255 255 ((tick-8)*50)) |> move (x,y)] 
---        ++ genPic tick (x,y) ++
---        [(text (bold (Text.height 20 (Text.color white ((fromString (toString val))))))) |> move(x,y - (squareSize/2 - 20))]
---    else
---        [square (squareSize) |> filled black |> move (x,y),
---        square (squareSize - 2) |> filled white |> move (x,y)]
---        ++ genPic tick (x,y) ++
---        [(text (bold (Text.height 20 (Text.color white ((fromString (toString val))))))) |> move(x,y - (squareSize/2 - 20))]
-
-
-    
-
 -- gridToPic renders the pic on the state of the grid
 -- rowsquare takes the ith row and generates a pic
 rowSquare : List Int -> Int -> List Form
@@ -346,10 +314,6 @@ background2 (w,h) board position c1 c2 =
         traced (solid white) (lineVert 2),
         traced (solid white) (lineVert 3)]
 
---view2 : (Int, Int) -> Element
---view2 (w,h) = 
---    collage w h (background2 (0,0) lightBrown lightGrey)
-
 update2 : (Float, Keys) -> List (List Int) -> List (List Int)
 update2 (dt, keys) board =
     if keys.y > 0 then (insertRandInGrid (manipY board False))
@@ -362,19 +326,9 @@ view : (Int, Int) -> List (List Int) -> Element
 view (w,h) board =
     collage w h (background2 (w,h) board (0,0) lightBrown lightGrey)
 
---view : (Int, Int) -> Piece -> Element
---view (w,h) p =
---    collage w h (background (p.x, p.y) lightBrown lightGrey p)
-
 main : Signal Element
 main = 
     Signal.map2 view Window.dimensions (Signal.foldp update2 board input)
-
---input2 : Signal Keys
---input2 =
---    Signal.sampleOn (every second) Keyboard.arrows)
---input : Signal Keys
---input = Signal.sampleOn Keyboard.arrows board
 
 input : Signal (Float, Keys)
 input = 
@@ -383,161 +337,4 @@ input =
     in
         --Signal.sampleOn delta Keyboard.arrows
         Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
-
-
-
---- Old code to move 1 tile
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-moveTile : Keys -> Piece -> Piece
-moveTile keys p =
-    if keys.y > 0 then
-        { p | 
-            vx = if p.x == leftEdge || p.x == rightEdge then 0 else p.vx ,
-            vy = if p.x == leftEdge || p.x == rightEdge then speed else p.vy }
-    else if keys.y < 0 then
-        { p | 
-            vx = if p.x == leftEdge || p.x == rightEdge then 0 else p.vx ,
-            vy = if p.x == leftEdge || p.x == rightEdge then -speed else p.vy }  
-    else if keys.x > 0 then
-        { p | 
-            vx = if p.y == leftEdge || p.y == rightEdge then speed else p.vx ,
-            vy = if p.y == leftEdge || p.y == rightEdge then 0 else p.vy }
-    else if keys.x < 0 then
-        { p | 
-            vx = if p.y == leftEdge || p.y == rightEdge then -speed else p.vx ,
-            vy = if p.y == leftEdge || p.y == rightEdge then 0 else p.vy }
-    else
-        p
-
-physics : Float -> Piece -> Piece
-physics dt p =
-  { p |
-      x = min (max leftEdge (p.x + dt * p.vx)) rightEdge,
-      y = min (max leftEdge (p.y + dt * p.vy)) rightEdge
-  }
-
-strafe : Keys -> Piece -> Piece
-strafe keys p =
-    { p |
-        x = --If it hits a piece before it reaches the limit, then combine if the pieces are the same val
-            if keys.x < 0 then 
-                if p.x - squareSize >= (-limit/2) then 
-                    p.x - squareSize
-                else p.x
-            else if keys.x > 0 then 
-                if p.x + squareSize <= limit/2 then
-                    p.x + squareSize
-                else p.x
-            else p.x,
-        y = if keys.y < 0 then 
-                if p.y - squareSize >= (-limit/2) then 
-                    p.y - squareSize
-                else p.y
-            else if keys.y > 0 then 
-                if p.y + squareSize <= limit/2 then
-                    p.y + squareSize
-                else p.y
-            else p.y
-    }
-
-
-
-update : (Float, Keys) -> Piece -> Piece
-update (dt, keys) p = 
-    p
-        |> moveTile keys 
-        |> physics dt
-
-
--- If there are more than 16 pieces/one cannot enter, then the game is over.
-background : (Float, Float) -> Color -> Color -> Piece -> List Form
-background position c1 c2 p = 
-    [ square (limit + 5) |> filled black, 
-    square limit |> filled grey, 
-
-    square squareSize |> filled c1 |> move (-150,150),
-    square squareSize |> filled c2 |> move (-50,150),
-    square squareSize |> filled c1 |> move (50,150),
-    square squareSize |> filled c2 |> move (150,150),
-
-    square squareSize |> filled c2 |> move (-150,50),
-    square squareSize |> filled c1 |> move (-50,50),
-    square squareSize |> filled c2 |> move (50,50),
-    square squareSize |> filled c1 |> move (150,50),
-
-    square squareSize |> filled c1 |> move (-150,-50),
-    square squareSize |> filled c2 |> move (-50,-50),
-    square squareSize |> filled c1 |> move (50,-50),
-    square squareSize |> filled c2 |> move (150,-50),
-
-    square squareSize |> filled c2 |> move (-150,-150),
-    square squareSize |> filled c1 |> move (-50,-150),
-    square squareSize |> filled c2 |> move (50,-150),
-    square squareSize |> filled c1 |> move (150,-150),
-    text (bold (Text.height 100 (fromString "2048"))) |> move (0, 300),
-    square squareSize |> filled black |> move position,
-    text (fromString ("vx: " ++ (toString p.vx) ++ ", " ++ "vy: " ++ toString p.vy)) |> move (0, -300)]
-    --square squareSize |> filled red |> move (fst(position), snd(position) + squareSize)] --square squareSize |> filled black |> move position ]
-
-
---main : Signal Element
---main = 
---    Signal.map2 view Window.dimensions (Signal.foldp update2 board input)
-
-----input2 : Signal Keys
-----input2 =
-----    Signal.sampleOn (every second) Keyboard.arrows)
-----input : Signal Keys
-----input = Signal.sampleOn Keyboard.arrows board
-
---input : Signal (Float, Keys)
---input = 
---    let
---        delta = Signal.map (\t -> t/20) (fps 40)
---    in
---        --Signal.sampleOn delta Keyboard.arrows
---        Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
 
