@@ -6,10 +6,8 @@ import Keyboard
 import Time exposing (..)
 import Text exposing (..)
 import List exposing (..)
---import Array exposing (..)
 import Random exposing (..)
 
---type alias State = (Int, Int)
 type alias Keys = { x:Int, y:Int }
 type alias Piece = { x:Float, y:Float, vx:Float, vy:Float, val:Int }
 type alias Board = List (List Int)
@@ -258,10 +256,6 @@ genSquare val (x,y) =
     else
         [square (squareSize - 2) |> filled white |> move (x,y),
         (text (bold (Text.color white (Text.height 20 (fromString (toString val)))))) |> move(x,y)]
-<<<<<<< Updated upstream
-=======
-    
->>>>>>> Stashed changes
 
 -- gridToPic renders the pic on the state of the grid
 -- rowsquare takes the ith row and generates a pic
@@ -289,8 +283,8 @@ lineVert col =
     path [((limit/2)-col*100,(limit/2)), ((limit/2) - (col*100),-(limit/2))]
 
 
-background2 : (Int, Int) -> Board -> (Float, Float) -> Color -> Color -> List Form
-background2 (w,h) board position c1 c2 =
+background : (Int, Int) -> Board -> (Float, Float) -> Color -> Color -> List Form
+background (w,h) board position c1 c2 =
     [rect (toFloat w) (toFloat h) |> filled black, -- big background
     square (limit + 5) |> filled white,
     square limit |> filled black,
@@ -310,13 +304,8 @@ background2 (w,h) board position c1 c2 =
         traced (solid white) (lineVert 2),
         traced (solid white) (lineVert 3)]
 
-<<<<<<< Updated upstream
-update2 : (Float, Keys) -> List (List Int) -> List (List Int)
-=======
-
-update2 : (Float, Keys) -> Board -> Board
->>>>>>> Stashed changes
-update2 (dt, keys) board =
+update : (Float, Keys) -> Board -> Board
+update (dt, keys) board =
     if keys.y > 0 then 
         let new = manipY board False in --Checks if the manipulation updates the board
         if gridEquals new board then board 
@@ -337,17 +326,16 @@ update2 (dt, keys) board =
 
 view : (Int, Int) -> Board -> Element
 view (w,h) board =
-    collage w h (background2 (w,h) board (0,0) lightBrown lightGrey)
+    collage w h (background (w,h) board (0,0) lightBrown lightGrey)
 
 main : Signal Element
 main = 
-    Signal.map2 view Window.dimensions (Signal.foldp update2 board input)
+    Signal.map2 view Window.dimensions (Signal.foldp update board input)
 
 input : Signal (Float, Keys)
 input = 
     let
         delta = Signal.map (\t -> t/20) (fps 10)
     in
-        --Signal.sampleOn delta Keyboard.arrows
         Signal.sampleOn delta (Signal.map2 (,) delta Keyboard.arrows)
 
