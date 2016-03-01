@@ -6,12 +6,13 @@ import Keyboard
 import Time exposing (..)
 import Text exposing (..)
 import List exposing (..)
-import Array exposing (..)
+--import Array exposing (..)
 import Random exposing (..)
 
 --type alias State = (Int, Int)
 type alias Keys = { x:Int, y:Int }
 type alias Piece = { x:Float, y:Float, vx:Float, vy:Float, val:Int }
+type alias Board = List (List Int)
 
 board = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,2,0]]
 -- make board an arr?
@@ -41,7 +42,7 @@ checkList xs =
         [] -> False
         hd::tl -> if hd == 0 then True else checkList tl
 
-checkEmptyGrid : List (List Int) -> Bool
+checkEmptyGrid : Board -> Bool
 checkEmptyGrid grid = 
     case grid of
         [] -> False
@@ -51,10 +52,9 @@ sumList : List Int -> Int -> Int
 sumList xs val = 
     List.foldl (+) val xs
 
-sumGrid : List (List Int) -> Int
+sumGrid : Board -> Int
 sumGrid grid = 
     List.foldl sumList 0 grid
-
 
 -- Inserts a 2 once
 insertList : List Int -> Bool -> List Int
@@ -80,14 +80,14 @@ insertRandInList xs =
         0 -> ((insertAtPos xs randVal 2), True)
         _ -> (xs, False)
 
-insertRandomHelper : List (List Int) -> Bool -> List (List Int)
+insertRandomHelper : Board -> Bool -> Board
 insertRandomHelper grid insertBool = 
     case grid of
         [] -> []
         hd::tl -> if checkList hd then (insertList hd insertBool) :: (insertRandomHelper tl False)
                 else hd :: (insertRandomHelper tl insertBool)
 
-insertRandInGrid : List (List Int) -> List (List Int)
+insertRandInGrid : Board -> Board
 insertRandInGrid grid = 
     insertRandomHelper grid True
 
@@ -99,7 +99,7 @@ findAtPos xs i =
         hd::tl -> if i == 0 then hd else findAtPos tl (i-1)
 
 -- Finds a tile at a position give its i,j coords in the grid
-getTileAtPos : List (List Int) -> (Int, Int) -> Int
+getTileAtPos : Board -> (Int, Int) -> Int
 getTileAtPos grid (i,j) =
     case grid of 
         [] -> -1
@@ -116,7 +116,7 @@ insertAtPos xs i num =
 
 -- gets next tile for a given tile in the given direction
 -- first bool: x or y (indicated by the bool, True for right, false for left)
-getNext : List (List Int) -> (Int, Int) -> Bool -> Bool -> Int
+getNext : Board -> (Int, Int) -> Bool -> Bool -> Int
 getNext grid (i,j) xBool dirBool =
     if xBool then 
         if dirBool then (getTileAtPos grid (i, j+1))
@@ -131,20 +131,20 @@ shiftX xs =
 
 -- gets the ith column of a grid and turns is into a list in 
 -- order to be manipulated in the x direction
-getYCol : List (List Int) -> Int -> List Int
+getYCol : Board -> Int -> List Int
 getYCol grid i = 
     case grid of 
         [] -> []
         hd::tl -> (findAtPos hd i)::(getYCol tl i)
 
 -- Puts the ith column in the grid and returns the grid
-putYColHelper : List Int -> Int -> List (List Int) -> Int -> List (List Int)
+putYColHelper : List Int -> Int -> Board -> Int -> Board
 putYColHelper ys i grid pos = 
     case grid of
         [] -> []
         hd::tl-> (insertAtPos hd i (findAtPos ys pos)) :: putYColHelper ys i tl (pos+1)
 
-putYCol : List Int -> Int -> List (List Int) -> List (List Int)
+putYCol : List Int -> Int -> Board -> Board
 putYCol ys i grid = 
     putYColHelper ys i grid 0
 
@@ -198,14 +198,14 @@ manipRow xs dirBool =
     combineX (padX (shiftX xs) dirBool) dirBool
 
 -- manipulates the ith column, dirBool is True for down, false for up
-manipCol : List (List Int) -> Int -> Bool -> List Int
+manipCol : Board -> Int -> Bool -> List Int
 manipCol grid i dirBool =
     let col = getYCol grid i 
     in
     (manipRow col dirBool)
 
 -- Given a list of cols, it rotates the cols to normal
-rotate : List (List Int) -> List (List Int)
+rotate : Board -> Board
 rotate colgrid =
     let 
     row1 = getYCol colgrid 0 
@@ -215,7 +215,7 @@ rotate colgrid =
     in 
     row1::row2::row3::row4::[]
 
-manipX : List (List Int) -> Bool -> List (List Int)
+manipX : Board -> Bool -> Board
 manipX grid dirBool =
     case grid of
         [] -> []
@@ -223,7 +223,7 @@ manipX grid dirBool =
             (manipRow hd dirBool)::(manipX tl dirBool)
 
 -- Manipulates the grid in the +y or -y directions
-manipY : List (List Int) -> Bool -> List (List Int)
+manipY : Board -> Bool -> Board
 manipY grid dirBool = 
     let 
     col1 = manipCol grid 0 dirBool
@@ -232,6 +232,14 @@ manipY grid dirBool =
     col4 = manipCol grid 3 dirBool
     in
     rotate (col1::col2::col3::col4::[])
+
+listEquals : List Int -> List Int -> Bool
+listEquals xs ys = 
+    foldl (&&) True (List.map2 (==) xs ys)
+
+gridEquals : Board -> Board -> Bool
+gridEquals grid1 grid2 =
+    foldl (&&) True (List.map2 listEquals grid1 grid2)
 
 -- This is a genSquare for the Regular 2048 game
 genSquare : Int -> (Float, Float) -> List Form
@@ -250,6 +258,10 @@ genSquare val (x,y) =
     else
         [square (squareSize - 2) |> filled white |> move (x,y),
         (text (bold (Text.color white (Text.height 20 (fromString (toString val)))))) |> move(x,y)]
+<<<<<<< Updated upstream
+=======
+    
+>>>>>>> Stashed changes
 
 -- gridToPic renders the pic on the state of the grid
 -- rowsquare takes the ith row and generates a pic
@@ -259,30 +271,14 @@ rowSquare row i =
             (genSquare (findAtPos row 1) (-50, 150 - ((toFloat i)*100))) ++ 
                 (genSquare (findAtPos row 2) (50, 150 - ((toFloat i)*100))) ++ 
                     (genSquare (findAtPos row 3) (150, 150 - ((toFloat i)*100)))
-        
--- the int keeps track of the row
-gridToPicHelper : List (List Int) -> Int -> List Form
-gridToPicHelper grid row =
-    case grid of
-        [] -> []
-        hd::tl -> 
-            (rowSquare hd row) ++ (gridToPicHelper tl (row+1))
 
-gridToPic2 : List (List Int) -> List Form
-gridToPic2 grid = 
+gridToPic : Board -> List Form
+gridToPic grid = 
     case grid of 
         [row1, row2, row3, row4] -> 
             rowSquare row1 0 ++ rowSquare row2 1 ++ rowSquare row3 2 ++ rowSquare row4 3
         _ -> if List.length grid == 0 then [square (limit + 5) |> filled green] else
             [square (limit + 5) |> filled black]
-
-
-gridToPic : List (List Int) -> List Form
-gridToPic grid = 
-    let pic = gridToPicHelper grid 0
-    in case pic of
-        [] -> [square (limit + 5) |> filled black]
-        _ -> pic 
 
 line : Float -> Path
 line row = 
@@ -293,7 +289,7 @@ lineVert col =
     path [((limit/2)-col*100,(limit/2)), ((limit/2) - (col*100),-(limit/2))]
 
 
-background2 : (Int, Int) -> List (List Int) -> (Float, Float) -> Color -> Color -> List Form
+background2 : (Int, Int) -> Board -> (Float, Float) -> Color -> Color -> List Form
 background2 (w,h) board position c1 c2 =
     [rect (toFloat w) (toFloat h) |> filled black, -- big background
     square (limit + 5) |> filled white,
@@ -305,7 +301,7 @@ background2 (w,h) board position c1 c2 =
     text (bold (Text.height 20 (Text.color white (fromString (toString (sumGrid board)))))) |> move (200, 300),
     --Graphics.Collage.rotate (degrees 20) (text (bold (Text.color white (fromString "The Presidential Version")))) |> move (-130, 345),
     text (bold (Text.color white (fromString "Use the arrow keys to combine the squares!"))) |> moveY -250] 
-    ++ gridToPic2 board ++ 
+    ++ gridToPic board ++ 
         [traced (solid white) (line 1),
         traced (solid white) (line 2),
         traced (solid white) (line 3),
@@ -314,15 +310,32 @@ background2 (w,h) board position c1 c2 =
         traced (solid white) (lineVert 2),
         traced (solid white) (lineVert 3)]
 
+<<<<<<< Updated upstream
 update2 : (Float, Keys) -> List (List Int) -> List (List Int)
+=======
+
+update2 : (Float, Keys) -> Board -> Board
+>>>>>>> Stashed changes
 update2 (dt, keys) board =
-    if keys.y > 0 then (insertRandInGrid (manipY board False))
-    else if keys.y < 0 then (insertRandInGrid (manipY board True))
-    else if keys.x > 0 then (insertRandInGrid (manipX board True))
-    else if keys.x < 0 then (insertRandInGrid (manipX board False))
+    if keys.y > 0 then 
+        let new = manipY board False in --Checks if the manipulation updates the board
+        if gridEquals new board then board 
+        else insertRandInGrid new
+    else if keys.y < 0 then 
+        let new = manipY board True in
+        if gridEquals new board then board
+        else insertRandInGrid new
+    else if keys.x > 0 then 
+        let new = manipX board True in 
+        if gridEquals new board then board 
+        else insertRandInGrid new
+    else if keys.x < 0 then 
+        let new = manipX board False in
+        if gridEquals new board then board
+        else insertRandInGrid new
     else board
 
-view : (Int, Int) -> List (List Int) -> Element
+view : (Int, Int) -> Board -> Element
 view (w,h) board =
     collage w h (background2 (w,h) board (0,0) lightBrown lightGrey)
 
